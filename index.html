@@ -549,10 +549,10 @@ function renderSidebarVideos() {
 function selectVideo(id) {
   state.activeVideoId = id;
   state.currentSlideIndex = 0;
-  state.currentNoteIndex = 0;
   saveActiveVideo();
   clearCanvas();
   renderPresentation();
+  loadVideoNotes();
 }
 
 // ========== PRESENTATION RENDER ==========
@@ -638,26 +638,27 @@ function renderPresentation() {
 }
 
 function renderNotes() {
+  // Notes are per video, not per slide — don't reload on slide change
+}
+
+function loadVideoNotes() {
   const ta = document.getElementById('notesArea');
-  // Load saved notes from localStorage for this slide, or show default notes from data
-  const slide = getActiveSlide();
-  const key = slide ? 'presenter_notes_' + slide.id : null;
+  const video = getActiveVideo();
+  const key = video ? 'presenter_notes_' + video.id : null;
   const saved = key ? localStorage.getItem(key) : null;
   if (saved !== null) {
     ta.value = saved;
-  } else if (slide && slide.notes && slide.notes.length) {
-    ta.value = slide.notes.join('\n\n');
   } else {
     ta.value = '';
   }
 }
 
-// Save notes on every keystroke
+// Save notes on every keystroke (per video)
 document.addEventListener('DOMContentLoaded', () => {
   const ta = document.getElementById('notesArea');
   if (ta) ta.addEventListener('input', () => {
-    const slide = getActiveSlide();
-    if (slide) localStorage.setItem('presenter_notes_' + slide.id, ta.value);
+    const video = getActiveVideo();
+    if (video) localStorage.setItem('presenter_notes_' + video.id, ta.value);
   });
 });
 
@@ -741,8 +742,9 @@ function showPresentation() {
   state.currentView = 'presentation';
   document.getElementById('adminView').classList.add('hidden');
   document.getElementById('presentationView').classList.remove('hidden');
-  state.currentSlideIndex = 0; state.currentNoteIndex = 0;
+  state.currentSlideIndex = 0;
   renderPresentation();
+  loadVideoNotes();
 }
 
 // ========== ADMIN ==========
@@ -1072,6 +1074,7 @@ async function init() {
   }
   initCanvas();
   renderPresentation();
+  loadVideoNotes();
 }
 init();
 </script>
