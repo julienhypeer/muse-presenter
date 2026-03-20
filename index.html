@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Muse Presenter</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        accent: { DEFAULT: '#f85526', light: '#ff7a54', dark: '#c43e17', muted: 'rgba(248,85,38,0.12)' },
+        surface: { 0: '#09090b', 1: '#111113', 2: '#18181b', 3: '#1f1f23', 4: '#27272a' },
+        border: { DEFAULT: '#27272a', light: '#3f3f46', muted: '#1f1f23' },
+        txt: { primary: '#fafafa', secondary: '#a1a1aa', muted: '#71717a', dim: '#52525b' }
+      },
+      fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+      boxShadow: {
+        glow: '0 0 20px rgba(248,85,38,0.15)',
+        card: '0 1px 3px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.3)',
+        elevated: '0 4px 12px rgba(0,0,0,0.5), 0 2px 4px rgba(0,0,0,0.3)',
+      }
+    }
+  }
+}
+</script>
+<style>
+:root { --prompter-bg: #0c0c0e; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; font-family: 'Inter', sans-serif; background: #09090b; color: #fafafa; }
+
+/* Sidebar animation */
+.sidebar-wrap { width: 52px; min-width: 52px; transition: width 0.35s cubic-bezier(0.4,0,0.2,1), min-width 0.35s cubic-bezier(0.4,0,0.2,1); }
+.sidebar-wrap.collapsed { width: 0; min-width: 0; }
+.sidebar-wrap.collapsed .sidebar-inner { opacity: 0; pointer-events: none; }
+.sidebar-inner { transition: opacity 0.25s ease 0.1s; }
+.sidebar-title-text { writing-mode: vertical-rl; text-orientation: mixed; transform: rotate(180deg); }
+
+/* Canvas overlay */
+#drawCanvas { position: absolute; inset: 0; z-index: 30; }
+.cursor-pen, .cursor-highlighter { cursor: crosshair; }
+.cursor-laser { cursor: none; }
+
+/* Laser */
+.laser-dot {
+  position: fixed; width: 18px; height: 18px; border-radius: 50%;
+  background: radial-gradient(circle, #ff1a1a 0%, rgba(255,26,26,0.5) 55%, transparent 100%);
+  box-shadow: 0 0 16px 6px rgba(255,26,26,0.45), 0 0 4px 2px rgba(255,26,26,0.8);
+  pointer-events: none; z-index: 50; display: none; transform: translate(-50%,-50%);
+  animation: laser-pulse 1.2s ease-in-out infinite;
+}
+@keyframes laser-pulse { 0%,100% { box-shadow: 0 0 16px 6px rgba(255,26,26,0.45); } 50% { box-shadow: 0 0 24px 10px rgba(255,26,26,0.6); } }
+
+/* Slide content rendering */
+.slide-rendered h1 { font-size: 2.75rem; font-weight: 800; letter-spacing: -0.025em; line-height: 1.15; margin-bottom: 1.25rem; color: #fafafa; }
+.slide-rendered h2 { font-size: 2rem; font-weight: 700; letter-spacing: -0.02em; line-height: 1.25; margin-bottom: 1rem; color: #fafafa; }
+.slide-rendered h3 { font-size: 1.4rem; font-weight: 600; line-height: 1.35; margin-bottom: 0.75rem; color: #e4e4e7; }
+.slide-rendered p { font-size: 1.3rem; line-height: 1.75; margin-bottom: 0.75rem; color: #d4d4d8; }
+.slide-rendered li { font-size: 1.2rem; line-height: 1.7; margin-bottom: 0.4rem; color: #d4d4d8; }
+.slide-rendered ul { list-style: disc; padding-left: 1.75rem; margin-bottom: 0.75rem; }
+.slide-rendered ol { list-style: decimal; padding-left: 1.75rem; margin-bottom: 0.75rem; }
+.slide-rendered strong { color: #fafafa; font-weight: 700; }
+.slide-rendered em { color: #a1a1aa; font-style: italic; }
+.slide-rendered code { background: rgba(248,85,38,0.1); color: #ff7a54; padding: 0.15em 0.4em; border-radius: 0.3rem; font-size: 0.9em; }
+
+/* Prompter rendering */
+.prompter-rendered { font-size: 1.65rem; line-height: 2; font-weight: 400; color: #d4d4d8; }
+.prompter-rendered strong { color: #fafafa; font-weight: 600; }
+.prompter-rendered em { color: #a1a1aa; }
+.prompter-rendered li { margin-bottom: 0.35rem; }
+.prompter-rendered ul, .prompter-rendered ol { padding-left: 1.5rem; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: #52525b; }
+
+/* Slide transition */
+.slide-transition { animation: slide-in 0.3s ease-out; }
+@keyframes slide-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Tool button glow on active */
+.tool-active-glow { box-shadow: 0 0 12px rgba(248,85,38,0.4), inset 0 1px 0 rgba(255,255,255,0.1); }
+</style>
+</head>
+<body class="bg-surface-0 text-txt-primary font-sans antialiased">
+
+<!-- ==================== PRESENTATION VIEW ==================== -->
+<div id="presentationView" class="flex h-full w-full">
+
+  <!-- ===== LEFT HALF ===== -->
+  <div class="w-1/2 flex h-full relative">
+
+    <!-- Sidebar -->
+    <div id="sidebarWrap" class="sidebar-wrap h-full bg-surface-2 border-r border-border flex-shrink-0 relative z-10">
+      <div class="sidebar-inner h-full flex flex-col items-center justify-between py-6 px-1.5 overflow-hidden">
+        <!-- Top: video icon -->
+        <div class="flex flex-col items-center gap-3">
+          <div class="w-8 h-8 rounded-lg bg-accent-muted flex items-center justify-center">
+            <svg class="w-4 h-4 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+          </div>
+          <div class="w-px h-8 bg-border"></div>
+        </div>
+        <!-- Center: vertical title -->
+        <div class="flex-1 flex items-center justify-center">
+          <span id="sidebarTitle" class="sidebar-title-text text-[11px] font-semibold text-txt-muted tracking-[0.15em] uppercase select-none max-h-[60vh] overflow-hidden">—</span>
+        </div>
+        <!-- Bottom: decorative dot -->
+        <div class="w-2 h-2 rounded-full bg-border-light"></div>
+      </div>
+      <!-- Toggle button -->
+      <button id="sidebarToggle" onclick="toggleSidebar()"
+        class="absolute top-1/2 -translate-y-1/2 -right-3.5 z-20 w-7 h-14 bg-surface-3 border border-border-light rounded-r-lg flex items-center justify-center text-txt-muted hover:text-txt-primary hover:bg-surface-4 transition-all duration-200 shadow-card group"
+        title="Réduire la sidebar">
+        <svg class="w-3.5 h-3.5 transition-transform duration-300 group-hover:scale-110" id="sidebarChevron" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+      </button>
+    </div>
+
+    <!-- Prompter zone -->
+    <div class="flex-1 flex flex-col h-full min-w-0" style="background: var(--prompter-bg)">
+      <!-- Prompter content -->
+      <div class="flex-1 flex items-center justify-center px-12 py-10 overflow-hidden">
+        <div id="prompterContent" class="prompter-rendered max-w-full text-center leading-relaxed"></div>
+      </div>
+      <!-- Prompter nav bar -->
+      <div class="flex-shrink-0 border-t border-border-muted bg-surface-1/60 backdrop-blur-sm">
+        <div class="flex items-center justify-between px-6 py-3">
+          <button id="notePrevBtn" onclick="prevNote()"
+            class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-surface-3 border border-border text-txt-secondary text-xs font-medium hover:bg-surface-4 hover:text-txt-primary disabled:opacity-25 disabled:cursor-not-allowed transition-all duration-150">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+            Préc.
+          </button>
+          <div class="flex items-center gap-2">
+            <div class="w-1.5 h-1.5 rounded-full bg-accent/50"></div>
+            <span id="noteIndicator" class="text-[11px] font-medium text-txt-dim tracking-wide uppercase">—</span>
+            <div class="w-1.5 h-1.5 rounded-full bg-accent/50"></div>
+          </div>
+          <button id="noteNextBtn" onclick="nextNote()"
+            class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-surface-3 border border-border text-txt-secondary text-xs font-medium hover:bg-surface-4 hover:text-txt-primary disabled:opacity-25 disabled:cursor-not-allowed transition-all duration-150">
+            Suiv.
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== RIGHT HALF ===== -->
+  <div class="w-1/2 flex flex-col h-full border-l border-border relative bg-surface-0">
+
+    <!-- Admin toggle (top right) -->
+    <button onclick="showAdmin()"
+      class="absolute top-3 right-3 z-40 w-8 h-8 rounded-lg bg-surface-2/80 border border-border hover:border-border-light flex items-center justify-center text-txt-dim hover:text-txt-secondary transition-all duration-200 backdrop-blur-sm"
+      title="Administration (A)">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+    </button>
+
+    <!-- Slide content area -->
+    <div class="flex-1 flex items-center justify-center p-14 relative overflow-hidden" id="slideArea">
+      <div id="slideContent" class="slide-rendered max-w-2xl w-full slide-transition"></div>
+      <canvas id="drawCanvas" class="hidden"></canvas>
+    </div>
+
+    <!-- Laser dot -->
+    <div id="laserDot" class="laser-dot"></div>
+
+    <!-- Bottom toolbar -->
+    <div class="flex-shrink-0 border-t border-border bg-surface-2/80 backdrop-blur-md">
+      <div class="flex items-center justify-between px-5 py-2.5">
+        <!-- Drawing tools -->
+        <div class="flex items-center gap-1 bg-surface-3 rounded-xl p-1 border border-border">
+          <button id="toolNormal" onclick="setTool('normal')" title="Curseur (Esc)"
+            class="tool-btn w-9 h-9 rounded-lg flex items-center justify-center text-sm transition-all duration-150 bg-accent text-white tool-active-glow">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.042 21.672L13.684 16.6m0 0l-2.51 2.225.569-9.47 5.227 7.917-3.286-.672zM12 2.25V4.5m5.834.166l-1.591 1.591M20.25 10.5H18M7.757 14.743l-1.59 1.59M6 10.5H3.75m4.007-4.243l-1.59-1.59"/></svg>
+          </button>
+          <button id="toolPen" onclick="setTool('pen')" title="Stylo"
+            class="tool-btn w-9 h-9 rounded-lg flex items-center justify-center text-sm transition-all duration-150 text-txt-muted hover:text-txt-secondary hover:bg-surface-4">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125"/></svg>
+          </button>
+          <button id="toolHighlighter" onclick="setTool('highlighter')" title="Surligneur"
+            class="tool-btn w-9 h-9 rounded-lg flex items-center justify-center text-sm transition-all duration-150 text-txt-muted hover:text-txt-secondary hover:bg-surface-4">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9.53 16.122a3 3 0 00-5.78 1.128 2.25 2.25 0 01-2.4 2.245 4.5 4.5 0 008.4-2.245c0-.399-.078-.78-.22-1.128zm0 0a15.998 15.998 0 003.388-1.62m-5.043-.025a15.994 15.994 0 011.622-3.395m3.42 3.42a15.995 15.995 0 004.764-4.648l3.876-5.814a1.151 1.151 0 00-1.597-1.597L14.146 6.32a15.996 15.996 0 00-4.649 4.763m3.42 3.42a6.776 6.776 0 00-3.42-3.42"/></svg>
+          </button>
+          <button id="toolLaser" onclick="setTool('laser')" title="Laser"
+            class="tool-btn w-9 h-9 rounded-lg flex items-center justify-center text-sm transition-all duration-150 text-txt-muted hover:text-txt-secondary hover:bg-surface-4">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" fill="#ef4444"/><circle cx="12" cy="12" r="7" fill="none" stroke="#ef4444" stroke-width="1" opacity="0.4"/></svg>
+          </button>
+          <div class="w-px h-5 bg-border mx-0.5"></div>
+          <button onclick="clearCanvas()" title="Effacer"
+            class="w-9 h-9 rounded-lg flex items-center justify-center text-txt-dim hover:text-red-400 hover:bg-red-500/10 transition-all duration-150">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>
+          </button>
+        </div>
+
+        <!-- Slide navigation -->
+        <div class="flex items-center gap-3">
+          <button id="slidePrevBtn" onclick="prevSlide()"
+            class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-surface-3 border border-border text-txt-secondary text-xs font-medium hover:bg-surface-4 hover:text-txt-primary hover:border-border-light disabled:opacity-25 disabled:cursor-not-allowed transition-all duration-150 shadow-card">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+            Préc.
+          </button>
+          <div class="flex items-center gap-2 min-w-[4rem] justify-center">
+            <span id="slideIndicator" class="text-xs font-semibold text-txt-muted tabular-nums tracking-wide">—</span>
+          </div>
+          <button id="slideNextBtn" onclick="nextSlide()"
+            class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-surface-3 border border-border text-txt-secondary text-xs font-medium hover:bg-surface-4 hover:text-txt-primary hover:border-border-light disabled:opacity-25 disabled:cursor-not-allowed transition-all duration-150 shadow-card">
+            Suiv.
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ==================== ADMIN VIEW ==================== -->
+<div id="adminView" class="hidden h-full overflow-y-auto bg-surface-0">
+  <div class="max-w-5xl mx-auto py-10 px-8">
+
+    <!-- Admin header -->
+    <div class="flex items-center justify-between mb-10">
+      <div class="flex items-center gap-4">
+        <div class="w-10 h-10 rounded-xl bg-accent-muted border border-accent/20 flex items-center justify-center">
+          <svg class="w-5 h-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75"/></svg>
+        </div>
+        <div>
+          <h1 class="text-xl font-bold text-txt-primary tracking-tight">Administration</h1>
+          <p class="text-xs text-txt-dim mt-0.5">Gestion des vidéos, slides et notes de tournage</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="relative">
+          <select id="activeVideoSelect" onchange="setActiveVideo(this.value)"
+            class="appearance-none bg-surface-2 border border-border rounded-xl pl-4 pr-10 py-2.5 text-sm text-txt-secondary font-medium focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/30 transition-all cursor-pointer w-64">
+            <option value="">Sélectionner une vidéo active</option>
+          </select>
+          <svg class="w-4 h-4 text-txt-dim absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg>
+        </div>
+        <button onclick="showPresentation()"
+          class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-surface-3 border border-border text-txt-secondary text-sm font-medium hover:bg-surface-4 hover:text-txt-primary hover:border-border-light transition-all duration-150 shadow-card">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z"/></svg>
+          Présentation
+        </button>
+      </div>
+    </div>
+
+    <!-- Global intro card -->
+    <div class="bg-surface-2 border border-border rounded-2xl overflow-hidden mb-8 shadow-card">
+      <div class="px-6 py-4 border-b border-border-muted bg-surface-3/50 flex items-center gap-3">
+        <div class="w-7 h-7 rounded-lg bg-blue-500/10 flex items-center justify-center">
+          <svg class="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.331 0 4.472.89 6.064 2.346m0-12.304A8.966 8.966 0 0118 3.75c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.346m0-12.304v12.304"/></svg>
+        </div>
+        <div>
+          <h2 class="text-sm font-semibold text-txt-primary">Page d'intro globale</h2>
+          <p class="text-[11px] text-txt-dim">Affichée en page 1 du prompteur pour toutes les vidéos</p>
+        </div>
+      </div>
+      <div class="p-6">
+        <textarea id="globalIntroInput" rows="3" oninput="saveGlobalIntro()"
+          class="w-full bg-surface-1 border border-border rounded-xl px-4 py-3 text-sm text-txt-primary placeholder:text-txt-dim focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/30 resize-y min-h-[80px] transition-all font-sans"
+          placeholder="Bonjour et bienvenue dans cette vidéo..."></textarea>
+      </div>
+    </div>
+
+    <!-- Video list -->
+    <div id="adminVideoList">
+      <div class="flex items-center justify-between mb-5">
+        <div class="flex items-center gap-3">
+          <div class="w-7 h-7 rounded-lg bg-accent-muted flex items-center justify-center">
+            <svg class="w-3.5 h-3.5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3.375 19.5h17.25m-17.25 0a1.125 1.125 0 01-1.125-1.125M3.375 19.5h1.5C5.496 19.5 6 18.996 6 18.375m-3.75 0V5.625m0 12.75v-1.5c0-.621.504-1.125 1.125-1.125m18.375 2.625V5.625m0 12.75c0 .621-.504 1.125-1.125 1.125m1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125m0 3.75h-1.5A1.125 1.125 0 0118 18.375M20.625 4.5H3.375m17.25 0c.621 0 1.125.504 1.125 1.125M20.625 4.5h-1.5C18.504 4.5 18 5.004 18 5.625m3.75 0v1.5c0 .621-.504 1.125-1.125 1.125M3.375 4.5c-.621 0-1.125.504-1.125 1.125M3.375 4.5h1.5C5.496 4.5 6 5.004 6 5.625m-3.75 0v1.5c0 .621.504 1.125 1.125 1.125m0 0h1.5m-1.5 0c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125m1.5-3.75C5.496 8.25 6 7.746 6 7.125v-1.5M4.875 8.25C5.496 8.25 6 8.754 6 9.375v1.5m0-5.25v5.25m0-5.25C6 5.004 6.504 4.5 7.125 4.5h9.75c.621 0 1.125.504 1.125 1.125m1.125 2.625h1.5m-1.5 0A1.125 1.125 0 0118 7.125v-1.5m1.125 2.625c-.621 0-1.125.504-1.125 1.125v1.5m2.625-2.625c.621 0 1.125.504 1.125 1.125v1.5c0 .621-.504 1.125-1.125 1.125M18 5.625v5.25M7.125 12h9.75m-9.75 0A1.125 1.125 0 016 10.875M7.125 12C6.504 12 6 12.504 6 13.125m0-2.25C6 11.496 5.496 12 4.875 12M18 10.875c0 .621-.504 1.125-1.125 1.125M18 10.875c0 .621.504 1.125 1.125 1.125m-2.25 0c.621 0 1.125.504 1.125 1.125m-12 5.25v-5.25m0 5.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125m-12 0v-1.5c0-.621-.504-1.125-1.125-1.125M18 18.375v-5.25m0 5.25v-1.5c0-.621.504-1.125 1.125-1.125M18 13.125v1.5c0 .621.504 1.125 1.125 1.125M18 13.125c0-.621.504-1.125 1.125-1.125M6 13.125v1.5c0 .621-.504 1.125-1.125 1.125M6 13.125C6 12.504 5.496 12 4.875 12m-1.5 0h1.5m-1.5 0c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125M19.125 12h1.5m0 0c.621 0 1.125.504 1.125 1.125v1.5c0 .621-.504 1.125-1.125 1.125m-17.25 0h1.5m14.25 0h1.5"/></svg>
+          </div>
+          <h2 class="text-base font-semibold text-txt-primary">Vidéos</h2>
+          <span id="videoCount" class="text-[11px] font-medium text-txt-dim bg-surface-3 px-2 py-0.5 rounded-full">0</span>
+        </div>
+        <button onclick="addVideo()"
+          class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-accent hover:bg-accent-dark text-white text-sm font-semibold transition-all duration-150 shadow-glow hover:shadow-lg">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+          Nouvelle vidéo
+        </button>
+      </div>
+
+      <!-- Table -->
+      <div class="bg-surface-2 border border-border rounded-2xl overflow-hidden shadow-card">
+        <table class="w-full">
+          <thead>
+            <tr class="bg-surface-3/60">
+              <th class="text-left px-5 py-3.5 text-[11px] font-semibold text-txt-dim uppercase tracking-wider cursor-pointer hover:text-txt-secondary transition-colors select-none" onclick="sortVideos('title')">
+                <span class="inline-flex items-center gap-1">Titre <svg class="w-3 h-3 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 15L12 18.75 15.75 15m-7.5-6L12 5.25 15.75 9"/></svg></span>
+              </th>
+              <th class="text-left px-5 py-3.5 text-[11px] font-semibold text-txt-dim uppercase tracking-wider cursor-pointer hover:text-txt-secondary transition-colors select-none" onclick="sortVideos('date')">
+                <span class="inline-flex items-center gap-1">Date <svg class="w-3 h-3 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 15L12 18.75 15.75 15m-7.5-6L12 5.25 15.75 9"/></svg></span>
+              </th>
+              <th class="text-left px-5 py-3.5 text-[11px] font-semibold text-txt-dim uppercase tracking-wider cursor-pointer hover:text-txt-secondary transition-colors select-none" onclick="sortVideos('status')">
+                <span class="inline-flex items-center gap-1">Statut <svg class="w-3 h-3 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 15L12 18.75 15.75 15m-7.5-6L12 5.25 15.75 9"/></svg></span>
+              </th>
+              <th class="text-left px-5 py-3.5 text-[11px] font-semibold text-txt-dim uppercase tracking-wider">Slides</th>
+              <th class="text-right px-5 py-3.5 text-[11px] font-semibold text-txt-dim uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="videoTableBody" class="divide-y divide-border-muted"></tbody>
+        </table>
+        <div id="emptyVideoMsg" class="hidden text-center py-14">
+          <div class="w-12 h-12 rounded-2xl bg-surface-3 border border-border mx-auto mb-4 flex items-center justify-center">
+            <svg class="w-6 h-6 text-txt-dim" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+          </div>
+          <p class="text-sm text-txt-muted font-medium">Aucune vidéo</p>
+          <p class="text-xs text-txt-dim mt-1">Cliquez sur "Nouvelle vidéo" pour commencer</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Video detail (edit) -->
+    <div id="adminVideoDetail" class="hidden">
+      <button onclick="backToList()"
+        class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-surface-2 border border-border text-txt-secondary text-sm font-medium hover:bg-surface-3 hover:text-txt-primary transition-all duration-150 mb-6">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/></svg>
+        Retour à la liste
+      </button>
+
+      <!-- Video meta card -->
+      <div class="bg-surface-2 border border-border rounded-2xl overflow-hidden mb-8 shadow-card">
+        <div class="px-6 py-4 border-b border-border-muted bg-surface-3/50 flex items-center gap-3">
+          <div class="w-7 h-7 rounded-lg bg-purple-500/10 flex items-center justify-center">
+            <svg class="w-3.5 h-3.5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+          </div>
+          <h2 class="text-sm font-semibold text-txt-primary">Informations de la vidéo</h2>
+        </div>
+        <div class="p-6">
+          <div class="grid grid-cols-3 gap-5">
+            <div class="space-y-1.5">
+              <label class="text-[11px] font-semibold text-txt-dim uppercase tracking-wider">Titre</label>
+              <input type="text" id="editTitle" oninput="saveVideoDetail()"
+                class="w-full bg-surface-1 border border-border rounded-xl px-4 py-2.5 text-sm text-txt-primary focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/30 transition-all font-sans">
+            </div>
+            <div class="space-y-1.5">
+              <label class="text-[11px] font-semibold text-txt-dim uppercase tracking-wider">Date d'enregistrement</label>
+              <input type="date" id="editDate" oninput="saveVideoDetail()"
+                class="w-full bg-surface-1 border border-border rounded-xl px-4 py-2.5 text-sm text-txt-primary focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/30 transition-all font-sans">
+            </div>
+            <div class="space-y-1.5">
+              <label class="text-[11px] font-semibold text-txt-dim uppercase tracking-wider">Statut</label>
+              <div class="relative">
+                <select id="editStatus" onchange="saveVideoDetail()"
+                  class="appearance-none w-full bg-surface-1 border border-border rounded-xl px-4 py-2.5 text-sm text-txt-primary focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/30 transition-all cursor-pointer font-sans">
+                  <option value="to_record">À tourner</option>
+                  <option value="recorded">Tourné</option>
+                  <option value="edited">Monté</option>
+                  <option value="published">Publié</option>
+                </select>
+                <svg class="w-4 h-4 text-txt-dim absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Slides editor -->
+      <div class="flex items-center justify-between mb-5">
+        <div class="flex items-center gap-3">
+          <div class="w-7 h-7 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+            <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z"/></svg>
+          </div>
+          <h2 class="text-base font-semibold text-txt-primary">Slides</h2>
+          <span id="slideCount" class="text-[11px] font-medium text-txt-dim bg-surface-3 px-2 py-0.5 rounded-full">0</span>
+        </div>
+        <button onclick="addSlide()"
+          class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-accent hover:bg-accent-dark text-white text-sm font-semibold transition-all duration-150 shadow-glow">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+          Ajouter une slide
+        </button>
+      </div>
+      <div id="slidesEditor" class="space-y-4"></div>
+    </div>
+
+  </div>
+</div>
+
+
+<script>
+// ========== STATE ==========
+let state = {
+  videos: [],
+  globalIntro: '',
+  activeVideoId: null,
+  currentSlideIndex: 0,
+  currentNoteIndex: 0,
+  currentView: 'presentation',
+  editingVideoId: null,
+  currentTool: 'normal',
+  sortField: 'date',
+  sortDir: 1
+};
+
+// ========== PERSISTENCE ==========
+function loadState() {
+  state.videos = JSON.parse(localStorage.getItem('rc_videos') || '[]');
+  state.globalIntro = localStorage.getItem('rc_globalIntro') || '';
+  state.activeVideoId = localStorage.getItem('rc_activeVideoId') || null;
+  if (state.activeVideoId && !state.videos.find(v => v.id === state.activeVideoId)) state.activeVideoId = null;
+}
+function saveVideos() { localStorage.setItem('rc_videos', JSON.stringify(state.videos)); }
+function saveGlobalIntro() {
+  state.globalIntro = document.getElementById('globalIntroInput').value;
+  localStorage.setItem('rc_globalIntro', state.globalIntro);
+}
+function saveActiveVideo() { localStorage.setItem('rc_activeVideoId', state.activeVideoId || ''); }
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+
+// ========== HELPERS ==========
+function getActiveVideo() { return state.videos.find(v => v.id === state.activeVideoId) || null; }
+function getActiveSlide() {
+  const v = getActiveVideo();
+  if (!v || !v.slides.length) return null;
+  return v.slides[state.currentSlideIndex] || null;
+}
+
+// ========== PRESENTATION RENDER ==========
+function renderPresentation() {
+  const video = getActiveVideo();
+  const slide = getActiveSlide();
+
+  document.getElementById('sidebarTitle').textContent = video ? video.title : 'Muse';
+
+  const sc = document.getElementById('slideContent');
+  if (slide) {
+    sc.innerHTML = formatContent(slide.title ? `# ${slide.title}\n\n${slide.content}` : slide.content);
+  } else if (video) {
+    sc.innerHTML = `
+      <div class="text-center space-y-4">
+        <div class="w-16 h-16 rounded-2xl bg-surface-2 border border-border mx-auto flex items-center justify-center">
+          <svg class="w-8 h-8 text-txt-dim" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6z"/></svg>
+        </div>
+        <p class="text-txt-muted text-base">Aucune slide</p>
+        <p class="text-txt-dim text-sm">Ouvrez l'admin pour ajouter des slides</p>
+      </div>`;
+  } else {
+    sc.innerHTML = `
+      <div class="text-center space-y-4">
+        <div class="w-16 h-16 rounded-2xl bg-accent-muted border border-accent/20 mx-auto flex items-center justify-center">
+          <svg class="w-8 h-8 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+        </div>
+        <p class="text-txt-secondary text-lg font-medium">Muse Presenter</p>
+        <p class="text-txt-dim text-sm">Appuyez sur <kbd class="px-2 py-0.5 rounded-md bg-surface-3 border border-border text-[11px] font-mono">A</kbd> pour ouvrir l'admin</p>
+      </div>`;
+  }
+
+  if (video && video.slides.length) {
+    document.getElementById('slideIndicator').textContent = `${state.currentSlideIndex + 1} / ${video.slides.length}`;
+    document.getElementById('slidePrevBtn').disabled = state.currentSlideIndex === 0;
+    document.getElementById('slideNextBtn').disabled = state.currentSlideIndex >= video.slides.length - 1;
+  } else {
+    document.getElementById('slideIndicator').textContent = '—';
+    document.getElementById('slidePrevBtn').disabled = true;
+    document.getElementById('slideNextBtn').disabled = true;
+  }
+
+  renderNotes();
+  resizeCanvas();
+}
+
+function renderNotes() {
+  const slide = getActiveSlide();
+  const notePages = buildNotePages(slide);
+  const total = notePages.length;
+  if (state.currentNoteIndex >= total) state.currentNoteIndex = total - 1;
+  if (state.currentNoteIndex < 0) state.currentNoteIndex = 0;
+
+  const content = notePages[state.currentNoteIndex] || '';
+  document.getElementById('prompterContent').innerHTML = content
+    ? `<div class="prompter-rendered">${formatContent(content)}</div>`
+    : '<p class="text-txt-dim text-lg italic">Aucune note</p>';
+
+  document.getElementById('noteIndicator').textContent = total > 0 ? `note ${state.currentNoteIndex + 1} / ${total}` : '—';
+  document.getElementById('notePrevBtn').disabled = state.currentNoteIndex === 0;
+  document.getElementById('noteNextBtn').disabled = state.currentNoteIndex >= total - 1;
+}
+
+function buildNotePages(slide) {
+  const pages = [];
+  if (state.globalIntro) pages.push(state.globalIntro);
+  if (slide && slide.notes) slide.notes.forEach(n => { if (n.trim()) pages.push(n); });
+  return pages;
+}
+
+// ========== SLIDE NAV ==========
+function prevSlide() {
+  if (state.currentSlideIndex > 0) { state.currentSlideIndex--; state.currentNoteIndex = 0; clearCanvas(); renderPresentation(); }
+}
+function nextSlide() {
+  const v = getActiveVideo();
+  if (v && state.currentSlideIndex < v.slides.length - 1) { state.currentSlideIndex++; state.currentNoteIndex = 0; clearCanvas(); renderPresentation(); }
+}
+
+// ========== NOTE NAV ==========
+function prevNote() { if (state.currentNoteIndex > 0) { state.currentNoteIndex--; renderNotes(); } }
+function nextNote() {
+  const total = buildNotePages(getActiveSlide()).length;
+  if (state.currentNoteIndex < total - 1) { state.currentNoteIndex++; renderNotes(); }
+}
+
+// ========== SIDEBAR ==========
+function toggleSidebar() {
+  const wrap = document.getElementById('sidebarWrap');
+  const chevron = document.getElementById('sidebarChevron');
+  wrap.classList.toggle('collapsed');
+  chevron.style.transform = wrap.classList.contains('collapsed') ? 'rotate(180deg)' : '';
+}
+
+// ========== DRAWING ==========
+let isDrawing = false, lastX = 0, lastY = 0;
+
+function setTool(tool) {
+  state.currentTool = tool;
+  const canvas = document.getElementById('drawCanvas');
+  const laserDot = document.getElementById('laserDot');
+
+  document.querySelectorAll('.tool-btn').forEach(b => {
+    b.classList.remove('bg-accent', 'text-white', 'tool-active-glow');
+    b.classList.add('text-txt-muted');
+  });
+  const active = document.getElementById('tool' + tool.charAt(0).toUpperCase() + tool.slice(1));
+  active.classList.add('bg-accent', 'text-white', 'tool-active-glow');
+  active.classList.remove('text-txt-muted');
+
+  canvas.classList.remove('cursor-pen', 'cursor-highlighter', 'cursor-laser');
+  laserDot.style.display = 'none';
+
+  if (tool === 'normal') {
+    canvas.classList.add('hidden');
+  } else {
+    canvas.classList.remove('hidden');
+    resizeCanvas();
+    canvas.classList.add('cursor-' + tool);
+  }
+}
+
+function resizeCanvas() {
+  const canvas = document.getElementById('drawCanvas');
+  const area = document.getElementById('slideArea');
+  canvas.width = area.offsetWidth;
+  canvas.height = area.offsetHeight;
+}
+
+function initCanvas() {
+  const canvas = document.getElementById('drawCanvas');
+  canvas.addEventListener('mousedown', e => {
+    if (state.currentTool === 'laser') return;
+    isDrawing = true;
+    const r = canvas.getBoundingClientRect();
+    lastX = e.clientX - r.left; lastY = e.clientY - r.top;
+  });
+  canvas.addEventListener('mousemove', e => {
+    const r = canvas.getBoundingClientRect();
+    const x = e.clientX - r.left, y = e.clientY - r.top;
+    if (state.currentTool === 'laser') {
+      const dot = document.getElementById('laserDot');
+      dot.style.display = 'block'; dot.style.left = e.clientX + 'px'; dot.style.top = e.clientY + 'px';
+      return;
+    }
+    if (!isDrawing) return;
+    const ctx = canvas.getContext('2d');
+    ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(x, y);
+    if (state.currentTool === 'pen') { ctx.strokeStyle = '#f85526'; ctx.lineWidth = 2.5; ctx.globalAlpha = 1; }
+    else if (state.currentTool === 'highlighter') { ctx.strokeStyle = '#facc15'; ctx.lineWidth = 22; ctx.globalAlpha = 0.3; }
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.stroke(); ctx.globalAlpha = 1;
+    lastX = x; lastY = y;
+  });
+  canvas.addEventListener('mouseup', () => { isDrawing = false; });
+  canvas.addEventListener('mouseleave', () => { isDrawing = false; if (state.currentTool === 'laser') document.getElementById('laserDot').style.display = 'none'; });
+}
+
+function clearCanvas() {
+  const c = document.getElementById('drawCanvas');
+  c.getContext('2d').clearRect(0, 0, c.width, c.height);
+}
+
+// ========== VIEWS ==========
+function showAdmin() {
+  state.currentView = 'admin';
+  document.getElementById('presentationView').classList.add('hidden');
+  document.getElementById('adminView').classList.remove('hidden');
+  renderAdmin();
+}
+function showPresentation() {
+  state.currentView = 'presentation';
+  document.getElementById('adminView').classList.add('hidden');
+  document.getElementById('presentationView').classList.remove('hidden');
+  state.currentSlideIndex = 0; state.currentNoteIndex = 0;
+  renderPresentation();
+}
+
+// ========== ADMIN ==========
+const statusLabels = { to_record: 'À tourner', recorded: 'Tourné', edited: 'Monté', published: 'Publié' };
+const statusColors = {
+  to_record: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+  recorded: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+  edited: 'bg-violet-500/10 text-violet-400 border-violet-500/20',
+  published: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20'
+};
+const statusDots = { to_record: 'bg-amber-400', recorded: 'bg-emerald-400', edited: 'bg-violet-400', published: 'bg-cyan-400' };
+
+function renderAdmin() {
+  document.getElementById('globalIntroInput').value = state.globalIntro;
+  renderActiveVideoSelect();
+  renderVideoTable();
+  if (state.editingVideoId) showVideoDetail(state.editingVideoId);
+  else { document.getElementById('adminVideoList').classList.remove('hidden'); document.getElementById('adminVideoDetail').classList.add('hidden'); }
+}
+
+function renderActiveVideoSelect() {
+  const sel = document.getElementById('activeVideoSelect');
+  sel.innerHTML = '<option value="">Sélectionner une vidéo active</option>';
+  state.videos.forEach(v => {
+    const opt = document.createElement('option');
+    opt.value = v.id; opt.textContent = v.title || 'Sans titre';
+    if (v.id === state.activeVideoId) opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
+
+function setActiveVideo(id) { state.activeVideoId = id || null; saveActiveVideo(); }
+
+function renderVideoTable() {
+  const tbody = document.getElementById('videoTableBody');
+  const emptyMsg = document.getElementById('emptyVideoMsg');
+  document.getElementById('videoCount').textContent = state.videos.length;
+
+  const sorted = [...state.videos].sort((a, b) => {
+    const va = a[state.sortField] || '', vb = b[state.sortField] || '';
+    return va < vb ? -state.sortDir : va > vb ? state.sortDir : 0;
+  });
+
+  if (!sorted.length) { tbody.innerHTML = ''; emptyMsg.classList.remove('hidden'); return; }
+  emptyMsg.classList.add('hidden');
+
+  tbody.innerHTML = sorted.map(v => `
+    <tr class="group hover:bg-surface-3/40 transition-colors duration-150">
+      <td class="px-5 py-4">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-lg bg-surface-3 border border-border flex items-center justify-center flex-shrink-0">
+            <svg class="w-4 h-4 text-txt-dim" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z"/></svg>
+          </div>
+          <span class="text-sm font-semibold text-txt-primary">${escHtml(v.title || 'Sans titre')}</span>
+        </div>
+      </td>
+      <td class="px-5 py-4 text-sm text-txt-muted tabular-nums">${v.date || '—'}</td>
+      <td class="px-5 py-4">
+        <span class="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full border ${statusColors[v.status] || ''}">
+          <span class="w-1.5 h-1.5 rounded-full ${statusDots[v.status] || ''}"></span>
+          ${statusLabels[v.status] || v.status}
+        </span>
+      </td>
+      <td class="px-5 py-4 text-sm text-txt-dim tabular-nums">${v.slides.length}</td>
+      <td class="px-5 py-4 text-right">
+        <div class="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button onclick="showVideoDetail('${v.id}')"
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-3 border border-border text-txt-secondary text-xs font-medium hover:bg-surface-4 hover:text-txt-primary transition-all">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125"/></svg>
+            Éditer
+          </button>
+          <button onclick="deleteVideo('${v.id}')"
+            class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-red-400/70 hover:text-red-400 hover:bg-red-500/10 text-xs font-medium transition-all">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>
+          </button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function sortVideos(field) {
+  if (state.sortField === field) state.sortDir *= -1;
+  else { state.sortField = field; state.sortDir = 1; }
+  renderVideoTable();
+}
+
+function addVideo() {
+  const v = { id: uid(), title: 'Nouvelle vidéo', date: new Date().toISOString().split('T')[0], status: 'to_record', slides: [] };
+  state.videos.push(v); saveVideos(); showVideoDetail(v.id);
+}
+
+function deleteVideo(id) {
+  if (!confirm('Supprimer cette vidéo ?')) return;
+  state.videos = state.videos.filter(v => v.id !== id);
+  if (state.activeVideoId === id) { state.activeVideoId = null; saveActiveVideo(); }
+  saveVideos(); state.editingVideoId = null; renderAdmin();
+}
+
+// ========== VIDEO DETAIL ==========
+function showVideoDetail(id) {
+  state.editingVideoId = id;
+  const v = state.videos.find(v => v.id === id);
+  if (!v) return;
+  document.getElementById('adminVideoList').classList.add('hidden');
+  document.getElementById('adminVideoDetail').classList.remove('hidden');
+  document.getElementById('editTitle').value = v.title;
+  document.getElementById('editDate').value = v.date;
+  document.getElementById('editStatus').value = v.status;
+  renderSlidesEditor(v);
+}
+
+function backToList() {
+  state.editingVideoId = null;
+  document.getElementById('adminVideoDetail').classList.add('hidden');
+  document.getElementById('adminVideoList').classList.remove('hidden');
+  renderVideoTable(); renderActiveVideoSelect();
+}
+
+function saveVideoDetail() {
+  const v = state.videos.find(v => v.id === state.editingVideoId);
+  if (!v) return;
+  v.title = document.getElementById('editTitle').value;
+  v.date = document.getElementById('editDate').value;
+  v.status = document.getElementById('editStatus').value;
+  saveVideos();
+}
+
+// ========== SLIDES EDITOR ==========
+function renderSlidesEditor(video) {
+  const container = document.getElementById('slidesEditor');
+  document.getElementById('slideCount').textContent = video.slides.length;
+
+  if (!video.slides.length) {
+    container.innerHTML = `
+      <div class="bg-surface-2 border border-border border-dashed rounded-2xl py-14 text-center">
+        <div class="w-12 h-12 rounded-2xl bg-surface-3 border border-border mx-auto mb-4 flex items-center justify-center">
+          <svg class="w-6 h-6 text-txt-dim" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+        </div>
+        <p class="text-sm text-txt-muted font-medium">Aucune slide</p>
+        <p class="text-xs text-txt-dim mt-1">Cliquez sur "Ajouter une slide" pour commencer</p>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = video.slides.map((s, i) => `
+    <div class="bg-surface-2 border border-border rounded-2xl overflow-hidden shadow-card">
+      <!-- Slide header -->
+      <div class="flex items-center justify-between px-5 py-3 bg-surface-3/50 border-b border-border-muted">
+        <div class="flex items-center gap-2.5">
+          <span class="w-7 h-7 rounded-lg bg-accent-muted text-accent text-xs font-bold flex items-center justify-center">${i + 1}</span>
+          <span class="text-sm font-semibold text-txt-primary">${escHtml(s.title || 'Sans titre')}</span>
+        </div>
+        <div class="flex items-center gap-1">
+          <button onclick="moveSlide(${i},-1)" ${i === 0 ? 'disabled' : ''}
+            class="w-7 h-7 rounded-lg flex items-center justify-center text-txt-dim hover:text-txt-secondary hover:bg-surface-4 disabled:opacity-20 disabled:cursor-not-allowed transition-all">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5"/></svg>
+          </button>
+          <button onclick="moveSlide(${i},1)" ${i === video.slides.length - 1 ? 'disabled' : ''}
+            class="w-7 h-7 rounded-lg flex items-center justify-center text-txt-dim hover:text-txt-secondary hover:bg-surface-4 disabled:opacity-20 disabled:cursor-not-allowed transition-all">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg>
+          </button>
+          <div class="w-px h-4 bg-border mx-1"></div>
+          <button onclick="deleteSlide(${i})"
+            class="w-7 h-7 rounded-lg flex items-center justify-center text-red-400/50 hover:text-red-400 hover:bg-red-500/10 transition-all">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>
+          </button>
+        </div>
+      </div>
+      <!-- Slide body -->
+      <div class="p-5 space-y-4">
+        <div class="grid grid-cols-2 gap-4">
+          <div class="space-y-1.5">
+            <label class="text-[11px] font-semibold text-txt-dim uppercase tracking-wider">Titre de la slide</label>
+            <input type="text" value="${escAttr(s.title)}" oninput="updateSlide(${i},'title',this.value)"
+              class="w-full bg-surface-1 border border-border rounded-xl px-4 py-2.5 text-sm text-txt-primary focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/30 transition-all font-sans">
+          </div>
+          <div class="space-y-1.5">
+            <label class="text-[11px] font-semibold text-txt-dim uppercase tracking-wider">Contenu (Markdown)</label>
+            <textarea rows="3" oninput="updateSlide(${i},'content',this.value)"
+              class="w-full bg-surface-1 border border-border rounded-xl px-4 py-2.5 text-sm text-txt-primary focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/30 transition-all font-sans resize-y min-h-[70px]">${escHtml(s.content)}</textarea>
+          </div>
+        </div>
+        <!-- Notes section -->
+        <div class="border-t border-border-muted pt-4">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2">
+              <svg class="w-3.5 h-3.5 text-txt-dim" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
+              <span class="text-[11px] font-semibold text-txt-dim uppercase tracking-wider">Notes de tournage</span>
+              <span class="text-[10px] text-txt-dim bg-surface-3 px-1.5 py-0.5 rounded">${s.notes.length}</span>
+            </div>
+            <button onclick="addNote(${i})"
+              class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-surface-3 border border-border text-txt-secondary text-xs font-medium hover:bg-surface-4 hover:text-txt-primary transition-all">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+              Note
+            </button>
+          </div>
+          <div class="space-y-2">
+            ${s.notes.map((n, ni) => `
+              <div class="flex gap-2 items-start group/note">
+                <span class="flex-shrink-0 w-5 h-5 rounded bg-surface-3 text-[10px] font-bold text-txt-dim flex items-center justify-center mt-2.5">${ni + 1}</span>
+                <textarea rows="2" oninput="updateNote(${i},${ni},this.value)"
+                  class="flex-1 bg-surface-1 border border-border rounded-xl px-4 py-2.5 text-sm text-txt-primary focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent/30 transition-all font-sans resize-y min-h-[56px]">${escHtml(n)}</textarea>
+                <button onclick="deleteNote(${i},${ni})"
+                  class="flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-red-400/40 hover:text-red-400 hover:bg-red-500/10 transition-all mt-2 opacity-0 group-hover/note:opacity-100">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+              </div>
+            `).join('')}
+            ${s.notes.length === 0 ? '<p class="text-txt-dim text-xs italic pl-7">Aucune note pour cette slide</p>' : ''}
+          </div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function addSlide() {
+  const v = state.videos.find(v => v.id === state.editingVideoId); if (!v) return;
+  v.slides.push({ id: uid(), title: 'Nouvelle slide', content: '', notes: [] });
+  saveVideos(); renderSlidesEditor(v);
+}
+function deleteSlide(i) {
+  const v = state.videos.find(v => v.id === state.editingVideoId); if (!v) return;
+  v.slides.splice(i, 1); saveVideos(); renderSlidesEditor(v);
+}
+function moveSlide(i, dir) {
+  const v = state.videos.find(v => v.id === state.editingVideoId); if (!v) return;
+  const j = i + dir; if (j < 0 || j >= v.slides.length) return;
+  [v.slides[i], v.slides[j]] = [v.slides[j], v.slides[i]]; saveVideos(); renderSlidesEditor(v);
+}
+function updateSlide(i, field, value) {
+  const v = state.videos.find(v => v.id === state.editingVideoId); if (!v) return;
+  v.slides[i][field] = value; saveVideos();
+}
+function addNote(si) {
+  const v = state.videos.find(v => v.id === state.editingVideoId); if (!v) return;
+  v.slides[si].notes.push(''); saveVideos(); renderSlidesEditor(v);
+}
+function updateNote(si, ni, val) {
+  const v = state.videos.find(v => v.id === state.editingVideoId); if (!v) return;
+  v.slides[si].notes[ni] = val; saveVideos();
+}
+function deleteNote(si, ni) {
+  const v = state.videos.find(v => v.id === state.editingVideoId); if (!v) return;
+  v.slides[si].notes.splice(ni, 1); saveVideos(); renderSlidesEditor(v);
+}
+
+// ========== UTILS ==========
+function escHtml(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+function escAttr(s) { return (s || '').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+function formatContent(text) {
+  if (!text) return '';
+  return text
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+    .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/^- (.+)$/gm, '<li>$1</li>')
+    .replace(/(<li>.*<\/li>)/gs, '<ul>$1</ul>')
+    .replace(/<\/ul>\s*<ul>/g, '')
+    .replace(/\n\n/g, '</p><p>')
+    .replace(/\n/g, '<br>');
+}
+
+// ========== KEYBOARD ==========
+document.addEventListener('keydown', e => {
+  if (state.currentView !== 'presentation') {
+    if (e.key === 'a' && !e.ctrlKey && !e.metaKey && !['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)) showPresentation();
+    return;
+  }
+  if (['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)) return;
+  switch (e.key) {
+    case 'ArrowRight': e.preventDefault(); nextSlide(); break;
+    case 'ArrowLeft': e.preventDefault(); prevSlide(); break;
+    case 'ArrowDown': e.preventDefault(); nextNote(); break;
+    case 'ArrowUp': e.preventDefault(); prevNote(); break;
+    case 'Escape': setTool('normal'); break;
+    case 'a': showAdmin(); break;
+  }
+});
+
+// ========== RESIZE ==========
+window.addEventListener('resize', () => { if (state.currentView === 'presentation') resizeCanvas(); });
+
+// ========== INIT ==========
+loadState();
+initCanvas();
+renderPresentation();
+</script>
+</body>
+</html>
