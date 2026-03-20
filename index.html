@@ -31,11 +31,24 @@ tailwind.config = {
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; overflow: hidden; font-family: 'Inter', sans-serif; background: #09090b; color: #fafafa; }
 
-/* Sidebar animation */
-.sidebar-wrap { width: 240px; min-width: 240px; transition: width 0.35s cubic-bezier(0.4,0,0.2,1), min-width 0.35s cubic-bezier(0.4,0,0.2,1); }
-.sidebar-wrap.collapsed { width: 0; min-width: 0; }
-.sidebar-wrap.collapsed .sidebar-inner { opacity: 0; pointer-events: none; }
-.sidebar-inner { transition: opacity 0.25s ease 0.1s; }
+/* Sidebar — hidden by default, appears on hover */
+.sidebar-wrap {
+  width: 0; min-width: 0;
+  transition: width 0.3s cubic-bezier(0.4,0,0.2,1), min-width 0.3s cubic-bezier(0.4,0,0.2,1);
+}
+.sidebar-wrap .sidebar-inner { opacity: 0; pointer-events: none; transition: opacity 0.2s ease; }
+/* Hover zone: invisible 20px strip on the left triggers the sidebar */
+.sidebar-hover-zone {
+  position: absolute; top: 0; left: 0; width: 20px; height: 100%; z-index: 15;
+}
+.sidebar-hover-zone:hover ~ .sidebar-wrap,
+.sidebar-wrap:hover {
+  width: 240px; min-width: 240px;
+}
+.sidebar-hover-zone:hover ~ .sidebar-wrap .sidebar-inner,
+.sidebar-wrap:hover .sidebar-inner {
+  opacity: 1; pointer-events: auto;
+}
 
 /* Canvas overlay */
 #drawCanvas { position: absolute; inset: 0; z-index: 30; }
@@ -216,25 +229,25 @@ html, body { height: 100%; overflow: hidden; font-family: 'Inter', sans-serif; b
   <!-- ===== LEFT HALF ===== -->
   <div class="w-1/2 flex h-full relative">
 
-    <!-- Sidebar -->
+    <!-- Hover zone to trigger sidebar -->
+    <div class="sidebar-hover-zone"></div>
+
+    <!-- Sidebar (hidden, appears on hover) -->
     <div id="sidebarWrap" class="sidebar-wrap h-full bg-surface-2 border-r border-border flex-shrink-0 relative z-10">
       <div class="sidebar-inner h-full flex flex-col overflow-hidden">
-        <!-- Header -->
-        <div class="flex items-center gap-2.5 px-4 py-4 border-b border-border-muted flex-shrink-0">
-          <div class="w-7 h-7 rounded-lg bg-accent-muted flex items-center justify-center flex-shrink-0">
-            <svg class="w-3.5 h-3.5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+        <!-- Header with logo -->
+        <div class="flex items-center justify-center px-4 py-4 border-b border-border-muted flex-shrink-0">
+          <img src="assets/logo.png" alt="Logo" class="h-8 object-contain" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+          <div class="items-center gap-2 hidden">
+            <div class="w-7 h-7 rounded-lg bg-accent-muted flex items-center justify-center flex-shrink-0">
+              <svg class="w-3.5 h-3.5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+            </div>
+            <span class="text-xs font-bold text-txt-secondary uppercase tracking-wider">Presenter</span>
           </div>
-          <span class="text-xs font-bold text-txt-secondary uppercase tracking-wider truncate">Vidéos</span>
         </div>
         <!-- Video list -->
         <div id="sidebarVideoList" class="flex-1 overflow-y-auto py-2 px-2 space-y-0.5"></div>
       </div>
-      <!-- Toggle button (top-right corner of sidebar) -->
-      <button id="sidebarToggle" onclick="toggleSidebar()"
-        class="absolute top-3 -right-3.5 z-20 w-7 h-7 bg-surface-3 border border-border-light rounded-r-lg flex items-center justify-center text-txt-muted hover:text-txt-primary hover:bg-surface-4 transition-all duration-200 shadow-card group"
-        title="Réduire la sidebar">
-        <svg class="w-3 h-3 transition-transform duration-300 group-hover:scale-110" id="sidebarChevron" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
-      </button>
     </div>
 
     <!-- Prompter zone -->
@@ -677,14 +690,6 @@ function prevNote() { if (state.currentNoteIndex > 0) { state.currentNoteIndex--
 function nextNote() {
   const total = buildNotePages(getActiveSlide()).length;
   if (state.currentNoteIndex < total - 1) { state.currentNoteIndex++; renderNotes(); }
-}
-
-// ========== SIDEBAR ==========
-function toggleSidebar() {
-  const wrap = document.getElementById('sidebarWrap');
-  const chevron = document.getElementById('sidebarChevron');
-  wrap.classList.toggle('collapsed');
-  chevron.style.transform = wrap.classList.contains('collapsed') ? 'rotate(180deg)' : '';
 }
 
 // ========== DRAWING ==========
