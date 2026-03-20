@@ -159,12 +159,9 @@ html, body { height: 100%; overflow: hidden; font-family: 'Inter', sans-serif; b
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Prompter rendering */
-.prompter-rendered { font-size: 1.65rem; line-height: 2; font-weight: 400; color: #d4d4d8; }
-.prompter-rendered strong { color: #fafafa; font-weight: 600; }
-.prompter-rendered em { color: #a1a1aa; }
-.prompter-rendered li { margin-bottom: 0.35rem; }
-.prompter-rendered ul, .prompter-rendered ol { padding-left: 1.5rem; }
+/* Notes textarea */
+#notesArea { font-family: 'Inter', sans-serif; color: #a1a1aa; }
+#notesArea::placeholder { color: #52525b; }
 
 /* Scrollbar */
 ::-webkit-scrollbar { width: 5px; }
@@ -277,25 +274,13 @@ html, body { height: 100%; overflow: hidden; font-family: 'Inter', sans-serif; b
         </div>
       </div>
 
-      <!-- Prompter content -->
-      <div class="flex-1 flex items-center justify-center px-12 py-10 overflow-hidden">
-        <div id="prompterContent" class="prompter-rendered max-w-full text-center leading-relaxed"></div>
-      </div>
-      <!-- Note nav bar -->
-      <div class="flex-shrink-0 border-t border-border-muted bg-surface-1/60 backdrop-blur-sm">
-        <div class="flex items-center justify-between px-6 py-2.5">
-          <button id="notePrevBtn" onclick="prevNote()"
-            class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-surface-3 border border-border text-txt-secondary text-[11px] font-medium hover:bg-surface-4 hover:text-txt-primary disabled:opacity-25 disabled:cursor-not-allowed transition-all duration-150">
-            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
-            Préc.
-          </button>
-          <span id="noteIndicator" class="text-[10px] font-medium text-txt-dim tracking-wide uppercase">—</span>
-          <button id="noteNextBtn" onclick="nextNote()"
-            class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-surface-3 border border-border text-txt-secondary text-[11px] font-medium hover:bg-surface-4 hover:text-txt-primary disabled:opacity-25 disabled:cursor-not-allowed transition-all duration-150">
-            Suiv.
-            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
-          </button>
-        </div>
+      <!-- Notes — single editable textarea -->
+      <div class="flex-1 px-4 py-3 overflow-hidden">
+        <textarea id="notesArea"
+          class="w-full h-full bg-transparent border-none outline-none resize-none text-txt-secondary font-sans leading-relaxed"
+          style="font-size: 13px;"
+          placeholder="Notes..."
+          spellcheck="false"></textarea>
       </div>
     </div>
   </div>
@@ -653,43 +638,36 @@ function renderPresentation() {
 }
 
 function renderNotes() {
+  const ta = document.getElementById('notesArea');
+  // Load saved notes from localStorage for this slide, or show default notes from data
   const slide = getActiveSlide();
-  const notePages = buildNotePages(slide);
-  const total = notePages.length;
-  if (state.currentNoteIndex >= total) state.currentNoteIndex = total - 1;
-  if (state.currentNoteIndex < 0) state.currentNoteIndex = 0;
-
-  const content = notePages[state.currentNoteIndex] || '';
-  document.getElementById('prompterContent').innerHTML = content
-    ? `<div class="prompter-rendered">${formatContent(content)}</div>`
-    : '<p class="text-txt-dim text-lg italic">Aucune note</p>';
-
-  document.getElementById('noteIndicator').textContent = total > 0 ? `note ${state.currentNoteIndex + 1} / ${total}` : '—';
-  document.getElementById('notePrevBtn').disabled = state.currentNoteIndex === 0;
-  document.getElementById('noteNextBtn').disabled = state.currentNoteIndex >= total - 1;
+  const key = slide ? 'presenter_notes_' + slide.id : null;
+  const saved = key ? localStorage.getItem(key) : null;
+  if (saved !== null) {
+    ta.value = saved;
+  } else if (slide && slide.notes && slide.notes.length) {
+    ta.value = slide.notes.join('\n\n');
+  } else {
+    ta.value = '';
+  }
 }
 
-function buildNotePages(slide) {
-  const pages = [];
-  if (state.globalIntro) pages.push(state.globalIntro);
-  if (slide && slide.notes) slide.notes.forEach(n => { if (n.trim()) pages.push(n); });
-  return pages;
-}
+// Save notes on every keystroke
+document.addEventListener('DOMContentLoaded', () => {
+  const ta = document.getElementById('notesArea');
+  if (ta) ta.addEventListener('input', () => {
+    const slide = getActiveSlide();
+    if (slide) localStorage.setItem('presenter_notes_' + slide.id, ta.value);
+  });
+});
 
 // ========== SLIDE NAV ==========
 function prevSlide() {
-  if (state.currentSlideIndex > 0) { state.currentSlideIndex--; state.currentNoteIndex = 0; clearCanvas(); renderPresentation(); }
+  if (state.currentSlideIndex > 0) { state.currentSlideIndex--; clearCanvas(); renderPresentation(); }
 }
 function nextSlide() {
   const v = getActiveVideo();
-  if (v && state.currentSlideIndex < v.slides.length - 1) { state.currentSlideIndex++; state.currentNoteIndex = 0; clearCanvas(); renderPresentation(); }
-}
-
-// ========== NOTE NAV ==========
-function prevNote() { if (state.currentNoteIndex > 0) { state.currentNoteIndex--; renderNotes(); } }
-function nextNote() {
-  const total = buildNotePages(getActiveSlide()).length;
-  if (state.currentNoteIndex < total - 1) { state.currentNoteIndex++; renderNotes(); }
+  if (v && state.currentSlideIndex < v.slides.length - 1) { state.currentSlideIndex++; clearCanvas(); renderPresentation(); }
 }
 
 // ========== DRAWING ==========
@@ -1064,8 +1042,6 @@ document.addEventListener('keydown', e => {
   switch (e.key) {
     case 'ArrowRight': e.preventDefault(); nextSlide(); break;
     case 'ArrowLeft': e.preventDefault(); prevSlide(); break;
-    case 'ArrowDown': e.preventDefault(); nextNote(); break;
-    case 'ArrowUp': e.preventDefault(); prevNote(); break;
     case 'Escape': setTool('normal'); break;
     case 'a': showAdmin(); break;
   }
