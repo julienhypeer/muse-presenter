@@ -4,15 +4,24 @@
   "videos": [
     {
       "id": "closing1",
-      "title": "Les 5 Piliers du Closing",
+      "title": "Les 5 piliers du closing",
       "date": "2026-03-20",
       "status": "to_record",
       "slides": [
         {
-          "id": "cl-hook",
-          "title": "Le Crochet",
+          "id": "cl-title",
+          "title": "Titre",
           "layout": "statement",
-          "content": "# Tu as déjà eu un appel de 45 minutes...\n\n...où le courant passait **super bien**,\n\npour finir sur un :\n\n> \"Envoie-moi un mail\"\n\n{{bg:?}}",
+          "content": "# Les 5 piliers du closing",
+          "notes": [
+            "Slide titre — laisser 2 secondes avant d'enchaîner"
+          ]
+        },
+        {
+          "id": "cl-hook",
+          "title": "Le crochet",
+          "layout": "statement",
+          "content": "# Tu as déjà eu un appel de 45 minutes...\n\n...où le courant passait **super bien**,\n\npour finir sur un :\n\n> \"Envoie-moi un mail\"",
           "notes": [
             "Regard caméra, ton direct, pas de sourire",
             "Laisser 2 secondes de silence après la citation"
@@ -20,7 +29,7 @@
         },
         {
           "id": "cl-why",
-          "title": "Le Problème",
+          "title": "Le problème",
           "layout": "statement",
           "content": "{{keyword:TROP SYMPA.}}\n\n# Pas assez expert.\n\n---\n\nC'est pour ça que tu perds des ventes alors que l'appel s'est \"bien passé\".",
           "notes": [
@@ -30,7 +39,7 @@
         },
         {
           "id": "cl-thesis",
-          "title": "La Thèse",
+          "title": "La thèse",
           "layout": "quote",
           "content": "# Le closing n'est pas une discussion.\n\nC'est un **coaching de prise de décision**.\n\n---\n\n> Si tu n'as pas d'autorité, tu n'as pas de vente.",
           "notes": [
@@ -42,14 +51,14 @@
           "id": "cl-p1-title",
           "title": "Pilier 1",
           "layout": "statement",
-          "content": "## Pilier 1\n# La Posture du Médecin Expert\n\n{{bg:1}}",
+          "content": "## Pilier 1\n# La posture du médecin expert\n\n{{bg:1}}",
           "notes": [
             "Slide de transition — enchaîner rapidement"
           ]
         },
         {
           "id": "cl-p1-concept",
-          "title": "Le Médecin ne s'excuse pas",
+          "title": "Le médecin ne s'excuse pas",
           "layout": "default",
           "content": "# Un médecin ne s'excuse jamais de te prendre du temps.\n\nIl ne cherche {{hl:pas ta validation}}.\n\nIl **diagnostique** et il **prescrit**.\n\n{{bg:1}}",
           "notes": [
@@ -69,7 +78,7 @@
         },
         {
           "id": "cl-p1-action",
-          "title": "Le Cadrage",
+          "title": "Le cadrage",
           "layout": "quote",
           "content": "## L'action à faire dès la 1ère minute :\n\n> \"Le but de cet appel, c'est de voir si on est compatibles. À la fin, on prend une décision ensemble. Oui ou non.\"\n\n---\n\nTu poses le cadre. {{hl:Tu mènes.}}\n\n{{bg:1}}",
           "notes": [
@@ -81,14 +90,14 @@
           "id": "cl-p2-title",
           "title": "Pilier 2",
           "layout": "statement",
-          "content": "## Pilier 2\n# La Questiologie\n\n{{bg:2}}",
+          "content": "## Pilier 2\n# La questiologie\n\n{{bg:2}}",
           "notes": [
             "Slide de transition"
           ]
         },
         {
           "id": "cl-p2-ratio",
-          "title": "Le Ratio d'Or",
+          "title": "Le ratio d'or",
           "layout": "stats",
           "content": "{{stat:10-15%|du temps de parole. Maximum.}}\n\n---\n\nSi tu parles **70%** du temps,\ntu tues l'émotion.\nTu tues la vente.\n\n{{bg:2}}",
           "notes": [
@@ -98,7 +107,7 @@
         },
         {
           "id": "cl-p2-silence",
-          "title": "Le Silence Stratégique",
+          "title": "Le silence stratégique",
           "layout": "default",
           "content": "# Après une réponse du prospect :\n\n{{keyword:SILENCE}}\n\n## Attends 2 secondes.\n\n---\n\nCe vide le force à **approfondir ses pensées** et à se confier davantage.\n\nLe silence est ton arme la plus puissante.\n\n{{bg:2}}",
           "notes": [
@@ -108,7 +117,7 @@
         },
         {
           "id": "cl-p2-bequilles",
-          "title": "Les Béquilles Verbales",
+          "title": "Les béquilles verbales",
           "layout": "list",
           "content": "## Supprime de ton vocabulaire :\n\n- **\"Franchement\"** : crée de la méfiance\n- **\"Tu vois\"** : montre un manque de clarté\n- **\"En fait\"** : révèle de l'hésitation\n\n---\n\nChaque béquille {{hl:érode ton autorité}}.\n\n{{bg:2}}",
           "notes": [
@@ -120,14 +129,14 @@
           "id": "cl-p3-title",
           "title": "Pilier 3",
           "layout": "statement",
-          "content": "## Pilier 3\n# Identifier la Faille\n\n{{bg:3}}",
+          "content": "## Pilier 3\n# Identifier la faille\n\n{{bg:3}}",
           "notes": [
             "Slide de transition"
           ]
         },
         {
           "id": "cl-p3-lion",
-          "title": "Traque la Gazelle",
+          "title": "Traque la gazelle",
           "layout": "list",
           "content": "# Sois comme un lion qui guette.\n\n---\n\nLa phrase importante, c'est :\n\n- Une **rupture**\n- Une **fatigue extrême**\n- Une **peur du futur**\n\nQuand elle arrive, {{hl:ne la laisse pas passer}}.\n\n{{bg:3}}",
           "notes": [
@@ -137,7 +146,7 @@
         },
         {
           "id": "cl-p3-douleur",
-          "title": "Quantifie la Douleur",
+          "title": "Quantifie la douleur",
           "layout": "quote",
           "content": "# Ne reste pas dans le flou.\n\n---\n\nSi le prospect te parle d'une douleur :\n\n> \"Quel impact cette situation a sur ton business aujourd'hui ?\"\n\nPas de pudeur. {{hl:Engouffre-toi.}}\n\n{{bg:3}}",
           "notes": [
@@ -147,7 +156,7 @@
         },
         {
           "id": "cl-p3-calcul",
-          "title": "Le Calcul qui Fait Mal",
+          "title": "Le calcul qui fait mal",
           "layout": "stats",
           "content": "## Il stagne à 5K. Il veut 25K. Ça fait 7 mois.\n\n---\n\n{{stat:140 000 €|perdus en ne bougeant pas}}\n\n---\n\n**Chiffre la stagnation.** C'est l'électrochoc.\n\n{{bg:3}}",
           "notes": [
@@ -159,14 +168,14 @@
           "id": "cl-p4-title",
           "title": "Pilier 4",
           "layout": "statement",
-          "content": "## Pilier 4\n# Le Pitch Sniper\n\n{{bg:4}}",
+          "content": "## Pilier 4\n# Le pitch sniper\n\n{{bg:4}}",
           "notes": [
             "Slide de transition"
           ]
         },
         {
           "id": "cl-p4-2min",
-          "title": "2 Minutes. Pas 6.",
+          "title": "2 minutes, pas 6",
           "layout": "default",
           "content": "{{stat:2 min|pas un mot de plus}}\n\n---\n\nPas un long monologue sur ton programme.\n\nChaque point relié à un **problème spécifique** cité par le prospect.\n\nUn sniper, pas un arroseur.\n\n{{bg:4}}",
           "notes": [
@@ -176,7 +185,7 @@
         },
         {
           "id": "cl-p4-piege",
-          "title": "Le Piège de la Valeur",
+          "title": "Le piège de la valeur",
           "layout": "statement",
           "content": "# Ne fais {{hl:JAMAIS}} de coaching technique pendant l'appel.\n\n---\n\nÇa crée un **shoot de dopamine** qui donne l'illusion au prospect qu'il peut réussir **seul**.\n\nTu viens de tuer l'urgence d'achat.\n\n{{bg:4}}",
           "notes": [
@@ -186,7 +195,7 @@
         },
         {
           "id": "cl-p4-prix",
-          "title": "Zéro Objection Avant le Prix",
+          "title": "Zéro objection avant le prix",
           "layout": "statement",
           "content": "# Ne donne jamais le prix\n# tant que le prospect n'est pas convaincu à 100%\n# qu'il aura des résultats avec toi.\n\n---\n\n> Le prix arrive APRÈS la conviction. Jamais avant.\n\n{{bg:4}}",
           "notes": [
@@ -198,14 +207,14 @@
           "id": "cl-p5-title",
           "title": "Pilier 5",
           "layout": "statement",
-          "content": "## Pilier 5\n# L'Identité Future\n\n{{bg:5}}",
+          "content": "## Pilier 5\n# L'identité future\n\n{{bg:5}}",
           "notes": [
             "Slide de transition"
           ]
         },
         {
           "id": "cl-p5-switch",
-          "title": "Le Switch d'Identité",
+          "title": "Le switch d'identité",
           "layout": "quote",
           "content": "# La question qui change tout :\n\n---\n\n> \"Quelle décision prendrait la version de toi qui a réussi dans 3 ans ?\"\n\n{{bg:5}}",
           "notes": [
@@ -215,7 +224,7 @@
         },
         {
           "id": "cl-p5-portes",
-          "title": "Fermer les Portes",
+          "title": "Fermer les portes",
           "layout": "list",
           "content": "# Le closing, c'est fermer toutes les portes de sortie.\n\n---\n\n- \"Je vais réfléchir\" : {{hl:porte fermée}}\n- \"Envoie-moi un mail\" : {{hl:porte fermée}}\n- \"J'en parle à mon associé\" : {{hl:porte fermée}}\n\nTu ne laisses **aucune échappatoire**.\n\n{{bg:5}}",
           "notes": [
@@ -225,7 +234,7 @@
         },
         {
           "id": "cl-p5-leadership",
-          "title": "Le Leadership Final",
+          "title": "Le leadership final",
           "layout": "quote",
           "content": "# Si le prospect hésite :\n\n---\n\n> \"Ça fait 3 ans que tu repousses.\n> Est-ce que tu veux continuer à être celui qui fuit\n> ou celui qui agit ?\"\n\n---\n\nMets-le face à ses **incohérences**.\nC'est ici que {{hl:80% des ventes se concluent}}.\n\n{{bg:5}}",
           "notes": [
@@ -235,177 +244,49 @@
         },
         {
           "id": "cl-recap-title",
-          "title": "À Retenir",
+          "title": "À retenir",
           "layout": "statement",
-          "content": "{{keyword:3 CHOSES}}\n\n# à retenir\n\n{{bg:✓}}",
+          "content": "{{keyword:3 CHOSES}}\n\n# à retenir",
           "notes": [
             "Slide de transition vers la conclusion"
           ]
         },
         {
           "id": "cl-recap-1",
-          "title": "L'Autorité",
+          "title": "L'autorité",
           "layout": "statement",
-          "content": "# L'autorité est le fil rouge.\n\n---\n\nSans elle, pas de confiance.\nSans confiance, {{hl:pas de vente}}.\n\n{{bg:1}}",
+          "content": "# L'autorité est le fil rouge.\n\n---\n\nSans elle, pas de confiance.\nSans confiance, {{hl:pas de vente}}.",
           "notes": [
             "Premier point de la conclusion"
           ]
         },
         {
           "id": "cl-recap-2",
-          "title": "L'Émotion",
+          "title": "L'émotion",
           "layout": "statement",
-          "content": "# L'émotion fait vendre.\n# La logique tue la vente.\n\n---\n\nUn pitch trop long, trop technique, trop logique = **prospect qui réfléchit au lieu d'agir**.\n\n{{bg:2}}",
+          "content": "# L'émotion fait vendre.\n# La logique tue la vente.\n\n---\n\nUn pitch trop long, trop technique, trop logique = **prospect qui réfléchit au lieu d'agir**.",
           "notes": [
             "Deuxième point"
           ]
         },
         {
           "id": "cl-recap-3",
-          "title": "La Responsabilité",
+          "title": "La responsabilité",
           "layout": "statement",
-          "content": "# Si le prospect s'échappe,\n# c'est que tu lui as laissé la porte ouverte.\n\n---\n\nC'est {{hl:ta}} responsabilité. Pas la sienne.\n\n{{bg:3}}",
+          "content": "# Si le prospect s'échappe,\n# c'est que tu lui as laissé la porte ouverte.\n\n---\n\nC'est {{hl:ta}} responsabilité. Pas la sienne.",
           "notes": [
             "Troisième point — le plus confrontant"
           ]
         },
         {
           "id": "cl-cta",
-          "title": "Passe à l'Action",
+          "title": "Passe à l'action",
           "layout": "quote",
-          "content": "# Savoir quoi faire est une chose.\n\n# L'appliquer sous haute tension en est une autre.\n\n---\n\n> La question n'est pas \"est-ce que ça marche ?\"\n> La question c'est : \"est-ce que tu es prêt à changer ?\"\n\n{{bg:★}}",
+          "content": "# Savoir quoi faire est une chose.\n\n# L'appliquer sous haute tension en est une autre.\n\n---\n\n> La question n'est pas \"est-ce que ça marche ?\"\n> La question c'est : \"est-ce que tu es prêt à changer ?\"",
           "notes": [
             "Terminer avec un ton calme mais ferme",
             "Transition vers l'offre d'accompagnement",
             "CTA : liker, s'abonner, lien en description"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "demo1",
-      "title": "Introduction à l'IA Générative",
-      "date": "2026-03-25",
-      "status": "to_record",
-      "slides": [
-        {
-          "id": "s1",
-          "title": "Qu'est-ce que l'IA générative ?",
-          "content": "## Définition\n\nL'IA générative désigne des systèmes capables de **créer du contenu** nouveau :\n\n- Texte (ChatGPT, Claude)\n- Images (Midjourney, DALL-E)\n- Vidéo (Sora, Runway)\n- Code (Copilot, Cursor)",
-          "notes": [
-            "Commencer par demander au public ce qu'ils connaissent déjà de l'IA",
-            "Mentionner que le marché est estimé à 1.3 trillion $ d'ici 2032"
-          ]
-        },
-        {
-          "id": "s2",
-          "title": "Comment ça fonctionne ?",
-          "content": "## Les grands principes\n\n- **Transformers** : architecture neuronale révolutionnaire (2017)\n- **Pré-entraînement** : apprentissage sur des milliards de textes\n- **Fine-tuning** : spécialisation pour des tâches précises\n- **RLHF** : alignement avec les préférences humaines",
-          "notes": [
-            "Utiliser l'analogie de l'apprenti qui lit toute une bibliothèque",
-            "Ne pas trop rentrer dans le technique, rester accessible"
-          ]
-        },
-        {
-          "id": "s3",
-          "title": "Cas d'usage concrets",
-          "content": "## En entreprise\n\n- **Marketing** : rédaction, visuels, campagnes personnalisées\n- **Développement** : génération de code, debugging, documentation\n- **Support** : chatbots intelligents, FAQ automatiques\n- **RH** : rédaction d'offres, screening de CV\n\n## En créatif\n\n- Storyboarding automatique\n- Musique et sound design\n- Prototypage rapide",
-          "notes": [
-            "Montrer la démo live de génération d'image",
-            "Rappeler les limites : hallucinations, biais, droits d'auteur"
-          ]
-        },
-        {
-          "id": "s4",
-          "title": "Et demain ?",
-          "content": "## Tendances 2026-2027\n\n- **Agents autonomes** : IA qui exécute des tâches complexes\n- **Multimodalité** : texte + image + vidéo + audio natifs\n- **IA embarquée** : modèles qui tournent sur smartphone\n- **Régulation** : EU AI Act, standards éthiques",
-          "notes": [
-            "Conclure sur une note optimiste mais réaliste",
-            "Ouvrir le Q&A"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "demo2",
-      "title": "Tutoriel Figma pour devs",
-      "date": "2026-03-20",
-      "status": "recorded",
-      "slides": [
-        {
-          "id": "s5",
-          "title": "Pourquoi Figma ?",
-          "content": "## L'outil de design collaboratif\n\n- **Gratuit** pour les petites équipes\n- **Temps réel** : collaboration comme Google Docs\n- **Dev-friendly** : inspect mode, export CSS\n- **Plugins** : écosystème riche",
-          "notes": [
-            "Mentionner l'acquisition par Adobe (annulée)",
-            "Comparer brièvement avec Sketch et Adobe XD"
-          ]
-        },
-        {
-          "id": "s6",
-          "title": "Les bases de l'interface",
-          "content": "## Navigation\n\n- `Espace` + clic : pan\n- `Ctrl` + scroll : zoom\n- `F` : frame tool\n- `T` : text tool\n\n## Concepts clés\n\n- **Frames** = conteneurs (comme des `div`)\n- **Auto Layout** = flexbox visuel\n- **Components** = composants réutilisables",
-          "notes": [
-            "Faire la démo en live, créer un bouton de A à Z"
-          ]
-        },
-        {
-          "id": "s7",
-          "title": "Auto Layout en 5 minutes",
-          "content": "## Le flexbox de Figma\n\n- Direction : horizontal / vertical\n- Gap : espacement entre éléments\n- Padding : marges internes\n- **Hug** : s'adapte au contenu\n- **Fill** : remplit l'espace disponible\n\nC'est *exactement* comme `display: flex` en CSS !",
-          "notes": [
-            "Montrer comment un bouton s'adapte au texte",
-            "Créer une card responsive en live"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "demo3",
-      "title": "Les bonnes pratiques Git",
-      "date": "2026-03-15",
-      "status": "edited",
-      "slides": [
-        {
-          "id": "s8",
-          "title": "Conventional Commits",
-          "content": "## Format\n\n`type(scope): description`\n\n- **feat** : nouvelle fonctionnalité\n- **fix** : correction de bug\n- **docs** : documentation\n- **refactor** : restructuration sans changement fonctionnel\n- **chore** : maintenance",
-          "notes": [
-            "Donner des exemples concrets de bons et mauvais messages de commit"
-          ]
-        },
-        {
-          "id": "s9",
-          "title": "Stratégie de branches",
-          "content": "## Git Flow simplifié\n\n- `main` : production, toujours stable\n- `develop` : intégration continue\n- `feature/*` : une branche par fonctionnalité\n- `hotfix/*` : corrections urgentes\n\n## Règles d'or\n\n- Jamais de push direct sur main\n- PR obligatoire avec review\n- CI/CD doit passer avant merge",
-          "notes": [
-            "Dessiner le schéma de branches au tableau",
-            "Mentionner trunk-based development comme alternative"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "demo4",
-      "title": "Accessibilité Web - WCAG 2.2",
-      "date": "2026-03-10",
-      "status": "published",
-      "slides": [
-        {
-          "id": "s10",
-          "title": "Pourquoi l'accessibilité ?",
-          "content": "## Les chiffres\n\n- **1 milliard** de personnes en situation de handicap dans le monde\n- **15-20%** de la population a un handicap\n- C'est aussi une **obligation légale** (RGAA en France)\n\n## C'est bon pour tout le monde\n\n- Meilleur SEO\n- Meilleure UX globale\n- Compatibilité multi-devices",
-          "notes": [
-            "Commencer par une mise en situation : naviguer sans souris pendant 30 secondes"
-          ]
-        },
-        {
-          "id": "s11",
-          "title": "Les 4 principes POUR",
-          "content": "## WCAG repose sur 4 piliers\n\n- **Perceivable** : le contenu doit être perceptible\n- **Operable** : l'interface doit être utilisable\n- **Understandable** : le contenu doit être compréhensible\n- **Robust** : compatible avec les technologies d'assistance",
-          "notes": [
-            "Un principe par slide serait mieux, mais on résume ici",
-            "Donner un exemple concret pour chaque principe"
           ]
         }
       ]
