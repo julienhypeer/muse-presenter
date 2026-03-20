@@ -32,11 +32,10 @@ tailwind.config = {
 html, body { height: 100%; overflow: hidden; font-family: 'Inter', sans-serif; background: #09090b; color: #fafafa; }
 
 /* Sidebar animation */
-.sidebar-wrap { width: 52px; min-width: 52px; transition: width 0.35s cubic-bezier(0.4,0,0.2,1), min-width 0.35s cubic-bezier(0.4,0,0.2,1); }
+.sidebar-wrap { width: 240px; min-width: 240px; transition: width 0.35s cubic-bezier(0.4,0,0.2,1), min-width 0.35s cubic-bezier(0.4,0,0.2,1); }
 .sidebar-wrap.collapsed { width: 0; min-width: 0; }
 .sidebar-wrap.collapsed .sidebar-inner { opacity: 0; pointer-events: none; }
 .sidebar-inner { transition: opacity 0.25s ease 0.1s; }
-.sidebar-title-text { writing-mode: vertical-rl; text-orientation: mixed; transform: rotate(180deg); }
 
 /* Canvas overlay */
 #drawCanvas { position: absolute; inset: 0; z-index: 30; }
@@ -59,11 +58,80 @@ html, body { height: 100%; overflow: hidden; font-family: 'Inter', sans-serif; b
 .slide-rendered h3 { font-size: 1.4rem; font-weight: 600; line-height: 1.35; margin-bottom: 0.75rem; color: #e4e4e7; }
 .slide-rendered p { font-size: 1.3rem; line-height: 1.75; margin-bottom: 0.75rem; color: #d4d4d8; }
 .slide-rendered li { font-size: 1.2rem; line-height: 1.7; margin-bottom: 0.4rem; color: #d4d4d8; }
-.slide-rendered ul { list-style: disc; padding-left: 1.75rem; margin-bottom: 0.75rem; }
+.slide-rendered ul { list-style: none; padding-left: 1.75rem; margin-bottom: 0.75rem; }
+.slide-rendered ul li { position: relative; padding-left: 0.25rem; }
+.slide-rendered ul li::before { content: ''; position: absolute; left: -1.25rem; top: 0.55em; width: 8px; height: 8px; border-radius: 50%; background: #f85526; opacity: 0.7; }
 .slide-rendered ol { list-style: decimal; padding-left: 1.75rem; margin-bottom: 0.75rem; }
 .slide-rendered strong { color: #fafafa; font-weight: 700; }
 .slide-rendered em { color: #a1a1aa; font-style: italic; }
 .slide-rendered code { background: rgba(248,85,38,0.1); color: #ff7a54; padding: 0.15em 0.4em; border-radius: 0.3rem; font-size: 0.9em; }
+
+/* Progress bar */
+.slide-progress-bar {
+  position: fixed; top: 0; left: 0; height: 4px; z-index: 100;
+  background: linear-gradient(90deg, #f85526, #ff7a54);
+  transition: width 0.4s cubic-bezier(0.4,0,0.2,1);
+  box-shadow: 0 0 12px rgba(248,85,38,0.4);
+}
+
+/* Background decorative number */
+.bg-number {
+  position: absolute; bottom: -1rem; right: -0.5rem; z-index: 1;
+  font-size: 15rem; font-weight: 900; line-height: 1;
+  color: #f85526; opacity: 0.06;
+  pointer-events: none; user-select: none;
+  font-family: 'Inter', sans-serif;
+}
+
+/* Keyword giant */
+.keyword {
+  display: block; font-size: 5rem; font-weight: 900;
+  letter-spacing: -0.04em; line-height: 1;
+  color: #f85526; margin: 1rem 0;
+}
+
+/* Stat number */
+.stat-block { display: inline-flex; flex-direction: column; align-items: center; margin: 1.5rem 0; }
+.stat-number { font-size: 4rem; font-weight: 900; color: #f85526; line-height: 1.1; letter-spacing: -0.03em; }
+.stat-label { font-size: 1.1rem; color: #a1a1aa; margin-top: 0.5rem; font-weight: 500; }
+
+/* Highlight inline */
+.hl-inline {
+  background: #f85526; color: #09090b; padding: 0.1em 0.5em;
+  border-radius: 0.25rem; font-weight: 700;
+}
+
+/* Layout: statement */
+.layout-statement .slide-rendered { display: flex; align-items: center; justify-content: center; text-align: center; }
+.layout-statement .slide-rendered h1 { font-size: 3.5rem; line-height: 1.2; }
+.layout-statement .slide-rendered p { font-size: 1.6rem; }
+
+/* Layout: quote */
+.layout-quote .slide-rendered { display: flex; align-items: center; justify-content: center; text-align: center; }
+.layout-quote .slide-rendered blockquote {
+  font-size: 2.2rem; line-height: 1.5; border: none; padding: 0;
+  color: #d4d4d8; font-style: italic; max-width: 80%;
+}
+.layout-quote .slide-rendered blockquote::before {
+  content: '\201C'; display: block; font-size: 5rem; color: #f85526;
+  opacity: 0.3; line-height: 0.5; margin-bottom: 0.75rem;
+}
+
+/* Layout: stats */
+.layout-stats .slide-rendered { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 3rem; text-align: center; }
+.layout-stats .stat-block { margin: 0; }
+.layout-stats .stat-number { font-size: 4.5rem; }
+
+/* Layout: list */
+.layout-list .slide-rendered ul li::before { width: 10px; height: 10px; opacity: 0.9; }
+.layout-list .slide-rendered li { font-size: 1.35rem; margin-bottom: 0.75rem; }
+
+/* Enhanced slide entry animation */
+.slide-enter { animation: slide-enter 0.45s cubic-bezier(0.22, 1, 0.36, 1); }
+@keyframes slide-enter {
+  from { opacity: 0; transform: translateY(16px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
 
 /* Prompter rendering */
 .prompter-rendered { font-size: 1.65rem; line-height: 2; font-weight: 400; color: #d4d4d8; }
@@ -84,9 +152,50 @@ html, body { height: 100%; overflow: hidden; font-family: 'Inter', sans-serif; b
 
 /* Tool button glow on active */
 .tool-active-glow { box-shadow: 0 0 12px rgba(248,85,38,0.4), inset 0 1px 0 rgba(255,255,255,0.1); }
+
+/* Animated gradient background for slide area */
+.slide-gradient-bg {
+  position: absolute; inset: 0; z-index: 0;
+  background: linear-gradient(45deg, #09090b, #1a0800, #0d0000, #09090b, #0a0500);
+  background-size: 400% 400%;
+  animation: gradientShift 15s ease infinite;
+}
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  25% { background-position: 100% 0%; }
+  50% { background-position: 100% 100%; }
+  75% { background-position: 0% 100%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Slide accent highlights */
+.slide-rendered .accent, .slide-rendered .hl { color: #f85526; }
+.slide-rendered blockquote {
+  border-left: 4px solid #f85526; padding: 1.25rem 1.5rem; margin: 1.25rem 0;
+  background: rgba(248,85,38,0.04); border-radius: 0 0.75rem 0.75rem 0;
+  color: #d4d4d8; font-style: italic; font-size: 1.4rem; line-height: 1.6;
+}
+.slide-rendered hr {
+  border: none; height: 2px; margin: 1.75rem 0;
+  background: linear-gradient(90deg, transparent, rgba(248,85,38,0.4), transparent);
+  animation: hr-fade 0.8s ease-out;
+}
+@keyframes hr-fade { from { opacity: 0; transform: scaleX(0.3); } to { opacity: 1; transform: scaleX(1); } }
+
+/* Pillar number badge in slides */
+.pillar-num {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 3rem; height: 3rem; border-radius: 1rem;
+  background: rgba(248,85,38,0.12); color: #f85526;
+  font-size: 1.5rem; font-weight: 800; margin-bottom: 0.75rem;
+  font-family: 'Inter', sans-serif;
+}
 </style>
 </head>
 <body class="bg-surface-0 text-txt-primary font-sans antialiased">
+
+<!-- Progress bar -->
+<div id="progressBar" class="slide-progress-bar" style="width: 0%"></div>
 
 <!-- ==================== PRESENTATION VIEW ==================== -->
 <div id="presentationView" class="flex h-full w-full">
@@ -96,20 +205,16 @@ html, body { height: 100%; overflow: hidden; font-family: 'Inter', sans-serif; b
 
     <!-- Sidebar -->
     <div id="sidebarWrap" class="sidebar-wrap h-full bg-surface-2 border-r border-border flex-shrink-0 relative z-10">
-      <div class="sidebar-inner h-full flex flex-col items-center justify-between py-6 px-1.5 overflow-hidden">
-        <!-- Top: video icon -->
-        <div class="flex flex-col items-center gap-3">
-          <div class="w-8 h-8 rounded-lg bg-accent-muted flex items-center justify-center">
-            <svg class="w-4 h-4 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+      <div class="sidebar-inner h-full flex flex-col overflow-hidden">
+        <!-- Header -->
+        <div class="flex items-center gap-2.5 px-4 py-4 border-b border-border-muted flex-shrink-0">
+          <div class="w-7 h-7 rounded-lg bg-accent-muted flex items-center justify-center flex-shrink-0">
+            <svg class="w-3.5 h-3.5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
           </div>
-          <div class="w-px h-8 bg-border"></div>
+          <span class="text-xs font-bold text-txt-secondary uppercase tracking-wider truncate">Vidéos</span>
         </div>
-        <!-- Center: vertical title -->
-        <div class="flex-1 flex items-center justify-center">
-          <span id="sidebarTitle" class="sidebar-title-text text-[11px] font-semibold text-txt-muted tracking-[0.15em] uppercase select-none max-h-[60vh] overflow-hidden">—</span>
-        </div>
-        <!-- Bottom: decorative dot -->
-        <div class="w-2 h-2 rounded-full bg-border-light"></div>
+        <!-- Video list -->
+        <div id="sidebarVideoList" class="flex-1 overflow-y-auto py-2 px-2 space-y-0.5"></div>
       </div>
       <!-- Toggle button -->
       <button id="sidebarToggle" onclick="toggleSidebar()"
@@ -160,7 +265,8 @@ html, body { height: 100%; overflow: hidden; font-family: 'Inter', sans-serif; b
 
     <!-- Slide content area -->
     <div class="flex-1 flex items-center justify-center p-14 relative overflow-hidden" id="slideArea">
-      <div id="slideContent" class="slide-rendered max-w-2xl w-full slide-transition"></div>
+      <div class="slide-gradient-bg"></div>
+      <div id="slideContent" class="slide-rendered max-w-2xl w-full slide-enter relative z-10"></div>
       <canvas id="drawCanvas" class="hidden"></canvas>
     </div>
 
@@ -418,16 +524,91 @@ function getActiveSlide() {
   return v.slides[state.currentSlideIndex] || null;
 }
 
+// ========== STATUS MAPS ==========
+const statusLabels = { to_record: 'À tourner', recorded: 'Tourné', edited: 'Monté', published: 'Publié' };
+const statusColors = {
+  to_record: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+  recorded: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+  edited: 'bg-violet-500/10 text-violet-400 border-violet-500/20',
+  published: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20'
+};
+const statusDots = { to_record: 'bg-amber-400', recorded: 'bg-emerald-400', edited: 'bg-violet-400', published: 'bg-cyan-400' };
+
+// ========== SIDEBAR VIDEOS ==========
+function renderSidebarVideos() {
+  const container = document.getElementById('sidebarVideoList');
+  if (!state.videos.length) {
+    container.innerHTML = '<p class="text-[11px] text-txt-dim text-center py-6 px-2">Aucune vidéo.<br>Ouvrez l\'admin (A) pour en créer.</p>';
+    return;
+  }
+  container.innerHTML = state.videos.map(v => {
+    const isActive = v.id === state.activeVideoId;
+    return `
+      <button onclick="selectVideo('${v.id}')"
+        class="w-full text-left px-3 py-2.5 rounded-xl flex items-center gap-2.5 transition-all duration-150 group
+        ${isActive
+          ? 'bg-accent/10 border border-accent/20'
+          : 'hover:bg-surface-3 border border-transparent'}">
+        <div class="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0
+          ${isActive ? 'bg-accent text-white' : 'bg-surface-3 text-txt-dim group-hover:bg-surface-4'}">
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z"/></svg>
+        </div>
+        <div class="min-w-0 flex-1">
+          <div class="text-[12px] font-semibold truncate ${isActive ? 'text-accent-light' : 'text-txt-secondary group-hover:text-txt-primary'}">${escHtml(v.title || 'Sans titre')}</div>
+          <div class="flex items-center gap-1.5 mt-0.5">
+            <span class="w-1.5 h-1.5 rounded-full flex-shrink-0 ${statusDots[v.status] || 'bg-txt-dim'}"></span>
+            <span class="text-[10px] text-txt-dim">${statusLabels[v.status] || v.status}</span>
+            <span class="text-[10px] text-txt-dim">· ${v.slides.length} slide${v.slides.length > 1 ? 's' : ''}</span>
+          </div>
+        </div>
+      </button>`;
+  }).join('');
+}
+
+function selectVideo(id) {
+  state.activeVideoId = id;
+  state.currentSlideIndex = 0;
+  state.currentNoteIndex = 0;
+  saveActiveVideo();
+  clearCanvas();
+  renderPresentation();
+}
+
 // ========== PRESENTATION RENDER ==========
+function updateProgressBar() {
+  const video = getActiveVideo();
+  const bar = document.getElementById('progressBar');
+  if (!video || !video.slides.length) { bar.style.width = '0%'; return; }
+  const pct = ((state.currentSlideIndex + 1) / video.slides.length) * 100;
+  bar.style.width = pct + '%';
+}
+
 function renderPresentation() {
   const video = getActiveVideo();
   const slide = getActiveSlide();
 
-  document.getElementById('sidebarTitle').textContent = video ? video.title : 'Muse';
+  renderSidebarVideos();
+  updateProgressBar();
 
   const sc = document.getElementById('slideContent');
+  const slideArea = document.getElementById('slideArea');
+
+  // Remove old layout classes
+  slideArea.className = slideArea.className.replace(/layout-\w+/g, '').trim();
+
   if (slide) {
-    sc.innerHTML = formatContent(slide.title ? `# ${slide.title}\n\n${slide.content}` : slide.content);
+    // Apply layout class
+    const layout = slide.layout || 'default';
+    if (layout !== 'default') slideArea.classList.add('layout-' + layout);
+
+    // Only show title in content for non-pillar-title slides (avoid double title)
+    const content = slide.content || '';
+    sc.innerHTML = formatContent(content);
+
+    // Re-trigger entry animation
+    sc.classList.remove('slide-enter');
+    void sc.offsetWidth;
+    sc.classList.add('slide-enter');
   } else if (video) {
     sc.innerHTML = `
       <div class="text-center space-y-4">
@@ -594,14 +775,6 @@ function showPresentation() {
 }
 
 // ========== ADMIN ==========
-const statusLabels = { to_record: 'À tourner', recorded: 'Tourné', edited: 'Monté', published: 'Publié' };
-const statusColors = {
-  to_record: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-  recorded: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-  edited: 'bg-violet-500/10 text-violet-400 border-violet-500/20',
-  published: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20'
-};
-const statusDots = { to_record: 'bg-amber-400', recorded: 'bg-emerald-400', edited: 'bg-violet-400', published: 'bg-cyan-400' };
 
 function renderAdmin() {
   document.getElementById('globalIntroInput').value = state.globalIntro;
@@ -844,7 +1017,29 @@ function escHtml(s) { const d = document.createElement('div'); d.textContent = s
 function escAttr(s) { return (s || '').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 function formatContent(text) {
   if (!text) return '';
-  return text
+  // Extract special syntaxes before markdown processing
+  let bgNumber = '';
+  let t = text;
+
+  // Extract {{bg:N}}
+  t = t.replace(/\{\{bg:(\w+)\}\}/g, (_, n) => { bgNumber = n; return ''; });
+
+  // Fix smart quotes and orphan punctuation
+  t = t
+    .replace(/'/g, "\u2019")
+    .replace(/ ([?!:;])/g, "\u00A0$1")
+    .replace(/"([^"]+)"/g, "\u00AB\u00A0$1\u00A0\u00BB");
+
+  // Custom rich syntaxes
+  t = t.replace(/\{\{keyword:([^}]+)\}\}/g, '<span class="keyword">$1</span>');
+  t = t.replace(/\{\{stat:([^|]+)\|([^}]+)\}\}/g, '<div class="stat-block"><span class="stat-number">$1</span><span class="stat-label">$2</span></div>');
+  t = t.replace(/\{\{hl:([^}]+)\}\}/g, '<span class="hl-inline">$1</span>');
+
+  // Markdown rendering
+  t = t
+    .replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>')
+    .replace(/<\/blockquote>\n?<blockquote>/g, '<br>')
+    .replace(/^---$/gm, '<hr>')
     .replace(/^### (.+)$/gm, '<h3>$1</h3>')
     .replace(/^## (.+)$/gm, '<h2>$1</h2>')
     .replace(/^# (.+)$/gm, '<h1>$1</h1>')
@@ -852,16 +1047,24 @@ function formatContent(text) {
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.+?)\*/g, '<em>$1</em>')
     .replace(/^- (.+)$/gm, '<li>$1</li>')
-    .replace(/(<li>.*<\/li>)/gs, '<ul>$1</ul>')
+    .replace(/(<li>[\s\S]*?<\/li>)/g, function(m) { return '<ul>' + m + '</ul>'; })
     .replace(/<\/ul>\s*<ul>/g, '')
     .replace(/\n\n/g, '</p><p>')
     .replace(/\n/g, '<br>');
+
+  // Append bg number if present
+  if (bgNumber) {
+    t += `<div class="bg-number">${bgNumber}</div>`;
+  }
+
+  return t;
 }
 
 // ========== KEYBOARD ==========
 document.addEventListener('keydown', e => {
   if (state.currentView !== 'presentation') {
-    if (e.key === 'a' && !e.ctrlKey && !e.metaKey && !['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)) showPresentation();
+    if (['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)) return;
+    if (e.key === 'Escape' || e.key === 'a') { showPresentation(); return; }
     return;
   }
   if (['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)) return;
@@ -879,9 +1082,29 @@ document.addEventListener('keydown', e => {
 window.addEventListener('resize', () => { if (state.currentView === 'presentation') resizeCanvas(); });
 
 // ========== INIT ==========
-loadState();
-initCanvas();
-renderPresentation();
+async function init() {
+  // Load data.json first, fallback to localStorage
+  try {
+    const res = await fetch('data.json?' + Date.now());
+    if (res.ok) {
+      const data = await res.json();
+      state.videos = data.videos || [];
+      state.globalIntro = data.globalIntro || '';
+      state.activeVideoId = data.activeVideoId || (state.videos.length ? state.videos[0].id : null);
+      // Sync to localStorage for admin edits
+      localStorage.setItem('rc_videos', JSON.stringify(state.videos));
+      localStorage.setItem('rc_globalIntro', state.globalIntro);
+      localStorage.setItem('rc_activeVideoId', state.activeVideoId || '');
+    } else {
+      loadState();
+    }
+  } catch (e) {
+    loadState();
+  }
+  initCanvas();
+  renderPresentation();
+}
+init();
 </script>
 </body>
 </html>
